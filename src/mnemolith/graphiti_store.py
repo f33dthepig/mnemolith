@@ -22,7 +22,8 @@ from dataclasses import dataclass
 from datetime import datetime
 
 from graphiti_core import Graphiti
-from graphiti_core.llm_client import AnthropicClient, LLMConfig, OpenAIClient
+from graphiti_core.llm_client import LLMConfig, OpenAIClient
+from graphiti_core.llm_client.anthropic_client import AnthropicClient
 from graphiti_core.nodes import EpisodeType
 
 from mnemolith.config import (
@@ -110,5 +111,43 @@ async def temporal_search(
     Returns Graphiti's ranked result set: relevant facts/entities ordered
     by a mix of semantic similarity, graph centrality, and recency.
     Callers should serialize results as needed for transport (MCP / JSON).
+    Use format_edge() for a human-readable rendering.
     """
     return await graphiti.search(query=query, num_results=num_results)
+
+
+def format_edge(edge) -> str:
+    """Render a Graphiti EntityEdge as readable text.
+
+    Output:
+        [REL_NAME] (if just a rel name) or [src --REL--> tgt] (if names known)
+        fact: <human-readable fact text>
+        valid_at: <iso timestamp> (omitted if None)
+        invalid_at: <iso timestamp> (omitted if None)
+
+    The fact text already names the entities, so we drop the UUID-only
+    header (which is noisy and uninformative) when we can't resolve
+    source/target names — Graphiti's EntityEdge doesn't carry node
+    names directly and we don't want a second round-trip per result.
+
+    Defensive about missing attributes so format never crashes on a
+    Graphiti API shape change.
+    """
+    name = getattr(edge, "name", "") or "RELATES_TO"
+    fact = getattr(edge, "fact", "") or ""
+    src_name = getattr(edge, "source_node_name", None)
+    tgt_name = getattr(edge, "target_node_name", None)
+    if src_name and tgt_name:
+        header = f"[{src_name} --{name}--> {tgt_name}]"
+    else:
+        header = f"[{name}]"
+    lines = [header]
+    if fact:
+        lines.append(f"fact: {fact}")
+    valid_at = getattr(edge, "valid_at", None)
+    if valid_at:
+        lines.append(f"valid_at: {valid_at.isoformat() if hasattr(valid_at, 'isoformat') else valid_at}")
+    invalid_at = getattr(edge, "invalid_at", None)
+    if invalid_at:
+        lines.append(f"invalid_at: {invalid_at.isoformat() if hasattr(invalid_at, 'isoformat') else invalid_at}")
+    return "\n".join(lines)

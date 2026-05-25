@@ -144,7 +144,7 @@ def _episode_reference_time(note, vault_root):
 
 def cmd_graphiti_search(args):
     """One-off temporal search from the CLI for smoke testing."""
-    from mnemolith.graphiti_store import build_graphiti, temporal_search
+    from mnemolith.graphiti_store import build_graphiti, format_edge, temporal_search
 
     async def run():
         graphiti = build_graphiti()
@@ -155,7 +155,7 @@ def cmd_graphiti_search(args):
                 return
             for r in results:
                 print("-" * 70)
-                print(r)
+                print(format_edge(r))
         finally:
             await graphiti.close()
 

@@ -168,7 +168,7 @@ def temporal_search(query: str, limit: int = 10) -> str:
     limit = max(1, min(limit, MAX_LIMIT))
 
     async def run():
-        from mnemolith.graphiti_store import build_graphiti
+        from mnemolith.graphiti_store import build_graphiti, format_edge
         from mnemolith.graphiti_store import temporal_search as _ts
 
         graphiti = build_graphiti()
@@ -176,12 +176,7 @@ def temporal_search(query: str, limit: int = 10) -> str:
             results = await _ts(graphiti, query, num_results=limit)
             if not results:
                 return "No temporal facts found."
-            parts = []
-            for r in results:
-                # Graphiti's result objects expose fact/source/episodes; we
-                # str() defensively so any object shape renders.
-                parts.append(str(r))
-            return "\n\n---\n\n".join(parts)
+            return "\n\n---\n\n".join(format_edge(r) for r in results)
         finally:
             await graphiti.close()
 
