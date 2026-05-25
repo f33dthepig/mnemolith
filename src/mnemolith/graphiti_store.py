@@ -22,6 +22,7 @@ from dataclasses import dataclass
 from datetime import datetime
 
 from graphiti_core import Graphiti
+from graphiti_core.driver.neo4j_driver import Neo4jDriver
 from graphiti_core.llm_client import LLMConfig, OpenAIClient
 from graphiti_core.llm_client.anthropic_client import AnthropicClient
 from graphiti_core.nodes import EpisodeType
@@ -29,6 +30,7 @@ from graphiti_core.nodes import EpisodeType
 from mnemolith.config import (
     get_graphiti_llm_model,
     get_graphiti_llm_provider,
+    get_neo4j_database,
     get_neo4j_password,
     get_neo4j_uri,
     get_neo4j_user,
@@ -65,10 +67,14 @@ def _build_llm_client():
 
 def build_graphiti() -> Graphiti:
     """Construct a connected Graphiti client. Caller owns the lifecycle."""
-    return Graphiti(
+    driver = Neo4jDriver(
         uri=get_neo4j_uri(),
         user=get_neo4j_user(),
         password=get_neo4j_password(),
+        database=get_neo4j_database(),
+    )
+    return Graphiti(
+        graph_driver=driver,
         llm_client=_build_llm_client(),
     )
 

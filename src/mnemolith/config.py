@@ -91,6 +91,12 @@ def get_neo4j_password() -> str:
     return pw
 
 
+def get_neo4j_database() -> str:
+    # Aura Free names the database after the instance ID, not "neo4j" —
+    # so override via NEO4J_DATABASE when targeting Aura.
+    return os.environ.get("NEO4J_DATABASE", "neo4j")
+
+
 def get_graphiti_llm_provider() -> str:
     return os.environ.get("GRAPHITI_LLM_PROVIDER", "anthropic")
 
