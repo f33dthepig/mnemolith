@@ -1,3 +1,4 @@
+import asyncio
 import atexit
 import logging
 
@@ -151,6 +152,43 @@ def pg_mutate(sql: str, params: str | None = None) -> str:
     p = tuple(params.split(",")) if params else None
     count = pg_store.execute_mutate(get_pool(), sql, p)
     return f"{count} row(s) affected."
+
+
+@mcp.tool()
+def temporal_search(query: str, limit: int = 10) -> str:
+    """Time-aware search across the Graphiti knowledge graph (Phase 1c).
+
+    Unlike `search` (which finds semantically similar note chunks), this
+    surfaces entities + facts + relationships extracted from notes with
+    their AS-OF timestamps. Use when the question is temporal:
+      - "What did Maria say about her timeline in March?"
+      - "Has the Highlands inventory story changed since June?"
+      - "When did Mike's pre-approval expire?"
+    """
+    limit = max(1, min(limit, MAX_LIMIT))
+
+    async def run():
+        from mnemolith.graphiti_store import build_graphiti
+        from mnemolith.graphiti_store import temporal_search as _ts
+
+        graphiti = build_graphiti()
+        try:
+            results = await _ts(graphiti, query, num_results=limit)
+            if not results:
+                return "No temporal facts found."
+            parts = []
+            for r in results:
+                # Graphiti's result objects expose fact/source/episodes; we
+                # str() defensively so any object shape renders.
+                parts.append(str(r))
+            return "\n\n---\n\n".join(parts)
+        finally:
+            await graphiti.close()
+
+    try:
+        return asyncio.run(run())
+    except Exception as e:
+        return f"Graphiti error: {type(e).__name__}: {e}"
 
 
 atexit.register(close_pool)

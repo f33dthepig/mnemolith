@@ -73,6 +73,36 @@ def get_backup_dir() -> Path:
     return Path(os.environ.get("BACKUP_DIR", "~/.mnemolith/backups")).expanduser()
 
 
+def get_neo4j_uri() -> str:
+    return os.environ.get("NEO4J_URI", "bolt://localhost:7687")
+
+
+def get_neo4j_user() -> str:
+    return os.environ.get("NEO4J_USER", "neo4j")
+
+
+def get_neo4j_password() -> str:
+    pw = os.environ.get("NEO4J_PASSWORD")
+    if not pw:
+        raise OSError(
+            "NEO4J_PASSWORD is not set. Required for the Graphiti temporal graph. "
+            "Match the value used by the docker-compose neo4j service."
+        )
+    return pw
+
+
+def get_graphiti_llm_provider() -> str:
+    return os.environ.get("GRAPHITI_LLM_PROVIDER", "anthropic")
+
+
+def get_graphiti_llm_model() -> str | None:
+    return os.environ.get("GRAPHITI_LLM_MODEL")
+
+
+def get_graphiti_embedding_model() -> str:
+    return os.environ.get("GRAPHITI_EMBEDDING_MODEL", "text-embedding-3-small")
+
+
 def get_postgres_conn_params() -> dict[str, str]:
     """Return dict with host, port, user, password, dbname for pg_dump/psql."""
     user = os.environ.get("POSTGRES_USER")

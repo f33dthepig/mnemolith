@@ -28,7 +28,25 @@ services:
     depends_on:
       - postgres
 
+  # Phase 1c: Neo4j backs the Graphiti temporal knowledge graph.
+  # Browser at http://localhost:7474 (Bolt at 7687 for the Python client).
+  # Plugins: APOC for Graphiti's entity-resolution helpers.
+  neo4j:
+    image: neo4j:5
+    ports:
+      - "127.0.0.1:7474:7474"
+      - "127.0.0.1:7687:7687"
+    environment:
+      NEO4J_AUTH: ${NEO4J_USER:-neo4j}/${NEO4J_PASSWORD:-changeme-graphiti}
+      NEO4J_PLUGINS: '["apoc"]'
+      NEO4J_dbms_security_procedures_unrestricted: apoc.*
+    volumes:
+      - neo4j_data:/data
+      - neo4j_logs:/logs
+
 volumes:
   qdrant_data:
   postgres_data:
   cloudbeaver_data:
+  neo4j_data:
+  neo4j_logs:
